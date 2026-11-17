@@ -34,6 +34,8 @@ The client needs `endpoint`, `port`, `user_name`, `cache_name` and `region` to c
 
 The cache is named `name`, or `git` lowercased when `name` is not set. The user ID, which is also the user name and user group ID, defaults to the cache name, and `user_id` overrides it. ElastiCache stores both in lowercase and allows up to 40 characters, so they must be lowercase letters, digits and hyphens, start with a letter, and not contain `--` or end in `-`. The plan fails if they don't. Each cache in an account and region needs its own name.
 
+Changing the cache name replaces the cache. Changing the user ID only replaces the user and user group: the new ones are created and the cache is switched to them before the old ones are deleted, since ElastiCache won't delete a user group that a cache still uses.
+
 ## Access string
 
 The user's access string is built as `on ~<key_patterns...> &* <acl_rules...>`. The defaults give `on ~<pattern> &* +@all -@dangerous -scan -randomkey`. Key patterns only restrict commands that name keys, so `scan` and `randomkey`, which aren't in `@dangerous`, are blocked by default because they would list key names outside `key_patterns`. If the client needs `scan`, pass your own `acl_rules` without `-scan`. `&*` (all pub/sub channels) is what ElastiCache adds when no channel permission is given, so it is set explicitly to avoid drift. For a stricter user, start `acl_rules` with `-@all` and list the commands the client needs. Cluster-mode clients usually need `hello`, `info`, `cluster|nodes` and `client|setinfo` as well as the data commands.

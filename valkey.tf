@@ -56,6 +56,8 @@ resource "aws_elasticache_user" "this" {
   }
 
   lifecycle {
+    create_before_destroy = true # see the user group below
+
     precondition {
       condition     = can(regex(local.id_pattern, local.user_id)) && !strcontains(local.user_id, "--") && !endswith(local.user_id, "-")
       error_message = "User ID \"${local.user_id}\" must be 1-40 lowercase letters, digits and hyphens, start with a letter, and have no consecutive or trailing hyphens. Set user_id, or change name or git."
@@ -69,4 +71,12 @@ resource "aws_elasticache_user_group" "this" {
   user_group_id = local.user_id
   user_ids      = [aws_elasticache_user.this[0].user_id]
   tags          = merge(local.tags, var.tags)
+
+  # ElastiCache won't delete a user group a cache still uses, and the cache only switches groups
+  # in place. So when user_id changes, create the new group, switch the cache to it, and then
+  # delete the old one. Replacing the user or group always means a new ID, so the old and new
+  # can exist side by side.
+  lifecycle {
+    create_before_destroy = true
+  }
 }
