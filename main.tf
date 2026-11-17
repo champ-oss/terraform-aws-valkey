@@ -1,5 +1,19 @@
-data "aws_region" "this" {}
+locals {
+  tags = {
+    git       = var.git
+    cost      = "shared"
+    creator   = "terraform"
+    component = "valkey"
+  }
 
-resource "random_id" "this" {
-  byte_length = 3
+  name    = coalesce(var.name, var.git)
+  user_id = coalesce(var.user_id, trim(substr(local.name, 0, 39), "-"))
+
+  access_string = join(" ", concat(
+    ["on"],
+    [for pattern in var.key_patterns : "~${pattern}"],
+    var.acl_rules,
+  ))
 }
+
+data "aws_region" "this" {}
