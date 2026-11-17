@@ -1,7 +1,8 @@
 # Calls the module the way dmv-global-clients/terraform will once it replaces its own
 # elasticache.tf with this module, and checks the BFF still gets everything it reads:
 # VALKEY_HOST, VALKEY_PORT, VALKEY_USERNAME, VALKEY_CACHE_NAME and VALKEY_REGION.
-# The existing cache will be recreated, so its old names are not pinned here.
+# It keeps the names its user, user group and IAM policy already have, so moving them into the
+# module updates them in place rather than replacing them.
 
 mock_provider "aws" {
   mock_data "aws_region" {
@@ -36,6 +37,8 @@ variables {
   role_names                = ["env-dmv-global-ecs-execution"] # terraform-aws-app runs the task as its execution role, so this is the role that signs the IAM token
   key_patterns              = ["session:*"]
   acl_rules                 = ["+@all", "-@dangerous", "-scan", "-randomkey"]
+  user_id                   = "env-dmv-global-bff"
+  iam_policy_name           = "env-dmv-global-global-client-bff-valkey-connect"
   tags = {
     cost    = "shared"
     creator = "terraform"
@@ -43,6 +46,16 @@ variables {
 }
 
 run "dmv_global_clients" {
+  assert {
+    condition     = aws_elasticache_user.this[0].user_id == "env-dmv-global-bff" && output.user_group_id == "env-dmv-global-bff"
+    error_message = "the user and user group should keep their names, since a new name replaces them"
+  }
+
+  assert {
+    condition     = output.iam_policy_name == "env-dmv-global-global-client-bff-valkey-connect"
+    error_message = "the connect policy should keep its name, since a new name replaces it"
+  }
+
   assert {
     condition     = aws_elasticache_user.this[0].access_string == "on ~session:* &* +@all -@dangerous -scan -randomkey"
     error_message = "the BFF's user should keep its current permissions: ${aws_elasticache_user.this[0].access_string}"
@@ -64,7 +77,7 @@ run "dmv_global_clients" {
   }
 
   assert {
-    condition     = output.user_name == "env-dmv-global" && output.cache_name == "env-dmv-global" && output.region == "us-east-2"
+    condition     = output.user_name == "env-dmv-global-bff" && output.cache_name == "env-dmv-global" && output.region == "us-east-2"
     error_message = "VALKEY_USERNAME, VALKEY_CACHE_NAME and VALKEY_REGION come from user_name, cache_name and region"
   }
 }
@@ -81,3 +94,4 @@ run "dmv_global_clients_disabled" {
     error_message = "disabled outputs should match dmv-global-clients' current fallbacks"
   }
 }
+
