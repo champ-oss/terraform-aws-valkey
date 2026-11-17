@@ -59,7 +59,7 @@ variable "cidr_blocks" {
   nullable    = false
 
   validation {
-    condition     = alltrue([for cidr in var.cidr_blocks : can(cidrhost(cidr, 0))])
+    condition     = alltrue([for cidr in var.cidr_blocks : can(cidrnetmask(cidr))]) # cidrnetmask rejects IPv6; cidrhost does not
     error_message = "cidr_blocks must contain only IPv4 CIDR blocks, such as 10.0.0.0/16."
   }
 }
@@ -157,7 +157,7 @@ variable "max_ecpu_per_second" {
 }
 
 variable "user_id" {
-  description = "IAM-authenticated Valkey user ID and user name: up to 40 lowercase letters, digits and hyphens, starting with a letter. Defaults to the cache name, truncated to 39 characters."
+  description = "IAM-authenticated Valkey user ID and user name: up to 40 lowercase letters, digits and hyphens, starting with a letter. Defaults to the cache name."
   type        = string
   default     = null
 }
@@ -179,9 +179,9 @@ variable "key_patterns" {
 }
 
 variable "acl_rules" {
-  description = "Ordered ACL command rules, each starting with + or -, for example [\"-@all\", \"+get\", \"+set\"]. Rendered after the key patterns in the access string."
+  description = "Ordered ACL command rules, each starting with + or -, for example [\"-@all\", \"+get\", \"+set\"]. Rendered after the key patterns in the access string. The default blocks @dangerous plus scan and randomkey, which list key names regardless of key_patterns."
   type        = list(string)
-  default     = ["+@all", "-@dangerous"]
+  default     = ["+@all", "-@dangerous", "-scan", "-randomkey"]
   nullable    = false
 
   validation {
@@ -191,7 +191,7 @@ variable "acl_rules" {
 }
 
 variable "role_names" {
-  description = "IAM role names that receive the elasticache:Connect policy. Leave empty and attach iam_policy_arn yourself if preferred."
+  description = "IAM role names that receive the elasticache:Connect policy. Use the role the client runs as (the ECS task role, not only the execution role); terraform-aws-app uses one role for both. Leave empty and attach iam_policy_arn yourself if preferred."
   type        = list(string)
   default     = []
   nullable    = false

@@ -33,7 +33,7 @@ variables {
   vpc_id                    = "vpc-0123456789abcdef0"
   private_subnet_ids        = ["subnet-0123456789abcdef0", "subnet-0123456789abcdef1"]
   source_security_group_ids = ["sg-0123456789abcdef0", "sg-0123456789abcdef1"]
-  role_names                = ["env-dmv-global-ecs-execution"]
+  role_names                = ["env-dmv-global-ecs-execution"] # terraform-aws-app runs the task as its execution role, so this is the role that signs the IAM token
   key_patterns              = ["session:*"]
   acl_rules                 = ["+@all", "-@dangerous", "-scan", "-randomkey"]
   tags = {
@@ -55,7 +55,7 @@ run "dmv_global_clients" {
 
   assert {
     condition     = aws_iam_role_policy_attachment.this[0].role == "env-dmv-global-ecs-execution"
-    error_message = "the connect policy should attach to the ECS execution role"
+    error_message = "the connect policy should attach to the ECS execution role, which terraform-aws-app also uses as the task role"
   }
 
   assert {

@@ -50,7 +50,7 @@ run "defaults" {
   }
 
   assert {
-    condition     = aws_elasticache_user.this[0].access_string == "on ~session:* &* +@all -@dangerous"
+    condition     = aws_elasticache_user.this[0].access_string == "on ~session:* &* +@all -@dangerous -scan -randomkey"
     error_message = "unexpected default access string: ${aws_elasticache_user.this[0].access_string}"
   }
 
@@ -143,7 +143,7 @@ run "long_name_user_id" {
   }
 
   assert {
-    condition     = length(aws_elasticache_user.this[0].user_id) <= 39 && !endswith(aws_elasticache_user.this[0].user_id, "-")
-    error_message = "default user_id must be at most 39 characters and not end with a hyphen"
+    condition     = aws_elasticache_user.this[0].user_id == "a-very-long-cache-name-that-is-forty-chr" && aws_elasticache_user_group.this[0].user_group_id == "a-very-long-cache-name-that-is-forty-chr"
+    error_message = "a 40-character cache name should be used in full for the user and user group IDs, so names that differ only at the end don't collide"
   }
 }

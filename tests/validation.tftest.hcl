@@ -101,7 +101,8 @@ run "long_git_rejected" {
   command = plan
 
   variables {
-    git = "env-dmv-global-clients-with-a-very-long-name"
+    git     = "env-dmv-global-clients-with-a-very-long-name"
+    user_id = "my-cache" # keep the user valid so the cache name check is the one that fails
   }
 
   expect_failures = [aws_elasticache_serverless_cache.this]
@@ -213,6 +214,16 @@ run "invalid_cidr_rejected" {
 
   variables {
     cidr_blocks = ["10.0.0.0"]
+  }
+
+  expect_failures = [var.cidr_blocks]
+}
+
+run "ipv6_cidr_rejected" {
+  command = plan
+
+  variables {
+    cidr_blocks = ["10.0.0.0/16", "2001:db8::/64"]
   }
 
   expect_failures = [var.cidr_blocks]

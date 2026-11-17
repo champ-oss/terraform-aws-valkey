@@ -18,7 +18,7 @@ module "valkey" {
   vpc_id                    = local.vpc_id
   private_subnet_ids        = local.private_subnet_ids
   source_security_group_ids = [module.core.ecs_app_security_group]
-  role_names                = [module.core.execution_ecs_role_name]
+  role_names                = [module.core.execution_ecs_role_name] # the role the app runs as: terraform-aws-app also uses the execution role as the task role
 
   key_patterns = ["session:*"]
   acl_rules    = ["-@all", "+get", "+set", "+del", "+ping", "+hello", "+info", "+cluster|nodes", "+client|setinfo"]
@@ -32,11 +32,11 @@ The client needs `endpoint`, `port`, `user_name`, `cache_name` and `region` to c
 
 ## Naming
 
-The cache is named `name`, or `git` lowercased when `name` is not set. The user ID, which is also the user name and user group ID, defaults to the cache name cut to 39 characters, and `user_id` overrides it. ElastiCache stores both in lowercase and allows up to 40 characters, so they must be lowercase letters, digits and hyphens, start with a letter, and not contain `--` or end in `-`. The plan fails if they don't. Each cache in an account and region needs its own name.
+The cache is named `name`, or `git` lowercased when `name` is not set. The user ID, which is also the user name and user group ID, defaults to the cache name, and `user_id` overrides it. ElastiCache stores both in lowercase and allows up to 40 characters, so they must be lowercase letters, digits and hyphens, start with a letter, and not contain `--` or end in `-`. The plan fails if they don't. Each cache in an account and region needs its own name.
 
 ## Access string
 
-The user's access string is built as `on ~<key_patterns...> &* <acl_rules...>`. The defaults give `on ~<pattern> &* +@all -@dangerous`. `&*` (all pub/sub channels) is what ElastiCache adds when no channel permission is given, so it is set explicitly to avoid drift. For a stricter user, start `acl_rules` with `-@all` and list the commands the client needs. Cluster-mode clients usually need `hello`, `info`, `cluster|nodes` and `client|setinfo` as well as the data commands.
+The user's access string is built as `on ~<key_patterns...> &* <acl_rules...>`. The defaults give `on ~<pattern> &* +@all -@dangerous -scan -randomkey`. Key patterns only restrict commands that name keys, so `scan` and `randomkey`, which aren't in `@dangerous`, are blocked by default because they would list key names outside `key_patterns`. If the client needs `scan`, pass your own `acl_rules` without `-scan`. `&*` (all pub/sub channels) is what ElastiCache adds when no channel permission is given, so it is set explicitly to avoid drift. For a stricter user, start `acl_rules` with `-@all` and list the commands the client needs. Cluster-mode clients usually need `hello`, `info`, `cluster|nodes` and `client|setinfo` as well as the data commands.
 
 ## Testing
 
@@ -79,7 +79,7 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_acl_rules"></a> [acl\_rules](#input\_acl\_rules) | Ordered ACL command rules, each starting with + or -, for example ["-@all", "+get", "+set"]. Rendered after the key patterns in the access string. | `list(string)` | <pre>[<br>  "+@all",<br>  "-@dangerous"<br>]</pre> | no |
+| <a name="input_acl_rules"></a> [acl\_rules](#input\_acl\_rules) | Ordered ACL command rules, each starting with + or -, for example ["-@all", "+get", "+set"]. Rendered after the key patterns in the access string. The default blocks @dangerous plus scan and randomkey, which list key names regardless of key\_patterns. | `list(string)` | <pre>[<br>  "+@all",<br>  "-@dangerous",<br>  "-scan",<br>  "-randomkey"<br>]</pre> | no |
 | <a name="input_cidr_blocks"></a> [cidr\_blocks](#input\_cidr\_blocks) | IPv4 CIDR blocks allowed to reach the cache on 6379 (primary) and 6380 (reader) | `list(string)` | `[]` | no |
 | <a name="input_daily_snapshot_time"></a> [daily\_snapshot\_time](#input\_daily\_snapshot\_time) | Daily UTC snapshot start time (HH:MM). Only used when snapshot\_retention\_limit > 0. https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_serverless_cache#daily_snapshot_time | `string` | `null` | no |
 | <a name="input_description"></a> [description](#input\_description) | Description of the serverless cache, up to 255 characters. https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_serverless_cache#description | `string` | `null` | no |
@@ -93,13 +93,13 @@ No modules.
 | <a name="input_max_ecpu_per_second"></a> [max\_ecpu\_per\_second](#input\_max\_ecpu\_per\_second) | Upper limit on ElastiCache Processing Units per second. Null means no limit. | `number` | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | Serverless cache name: up to 40 lowercase letters, digits and hyphens, starting with a letter. Defaults to var.git, lowercased. https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_serverless_cache#name | `string` | `null` | no |
 | <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | Private subnets for the cache endpoints. https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_serverless_cache#subnet_ids | `list(string)` | n/a | yes |
-| <a name="input_role_names"></a> [role\_names](#input\_role\_names) | IAM role names that receive the elasticache:Connect policy. Leave empty and attach iam\_policy\_arn yourself if preferred. | `list(string)` | `[]` | no |
+| <a name="input_role_names"></a> [role\_names](#input\_role\_names) | IAM role names that receive the elasticache:Connect policy. Use the role the client runs as (the ECS task role, not only the execution role); terraform-aws-app uses one role for both. Leave empty and attach iam\_policy\_arn yourself if preferred. | `list(string)` | `[]` | no |
 | <a name="input_security_group_ids"></a> [security\_group\_ids](#input\_security\_group\_ids) | Existing security groups to attach to the cache, in addition to the one this module creates | `list(string)` | `[]` | no |
 | <a name="input_snapshot_arns_to_restore"></a> [snapshot\_arns\_to\_restore](#input\_snapshot\_arns\_to\_restore) | Snapshot ARNs to create the cache from. Changing it replaces the cache. https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_serverless_cache#snapshot_arns_to_restore | `list(string)` | `null` | no |
 | <a name="input_snapshot_retention_limit"></a> [snapshot\_retention\_limit](#input\_snapshot\_retention\_limit) | Days to keep automatic snapshots, from 0 to 35. 0 disables them. https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_serverless_cache#snapshot_retention_limit | `number` | `0` | no |
 | <a name="input_source_security_group_ids"></a> [source\_security\_group\_ids](#input\_source\_security\_group\_ids) | Client security groups allowed to reach the cache on 6379 (primary) and 6380 (reader) | `list(string)` | `[]` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags to assign to resources | `map(string)` | `{}` | no |
-| <a name="input_user_id"></a> [user\_id](#input\_user\_id) | IAM-authenticated Valkey user ID and user name: up to 40 lowercase letters, digits and hyphens, starting with a letter. Defaults to the cache name, truncated to 39 characters. | `string` | `null` | no |
+| <a name="input_user_id"></a> [user\_id](#input\_user\_id) | IAM-authenticated Valkey user ID and user name: up to 40 lowercase letters, digits and hyphens, starting with a letter. Defaults to the cache name. | `string` | `null` | no |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | VPC for the cache security group. https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group#vpc_id | `string` | n/a | yes |
 
 ## Outputs

@@ -7,7 +7,7 @@ locals {
   }
 
   name    = coalesce(var.name, lower(var.git))
-  user_id = coalesce(var.user_id, trim(substr(local.name, 0, 39), "-"))
+  user_id = coalesce(var.user_id, local.name) # same rules as the cache name, so the full name is unique and valid
 
   # ElastiCache stores cache names and user IDs in lowercase and allows up to 40 characters,
   # starting with a letter, with no consecutive or trailing hyphens. Checked by preconditions in
