@@ -5,7 +5,8 @@ Serverless Amazon ElastiCache for Valkey with IAM authentication.
 - **Serverless:** no nodes to size or patch. Optional caps on storage and ECPU.
 - **IAM authentication:** clients sign a short-lived token with their IAM role. There is no password in SSM or Terraform state.
 - **Least privilege:** the Valkey user only gets the key patterns and ACL command rules you pass.
-- **Private:** the cache sits in private subnets, and only the client security groups you list can reach ports 6379 (primary) and 6380 (reader).
+- **Private:** the cache sits in private subnets, and only the client security groups and CIDR blocks you list can reach ports 6379 (primary) and 6380 (reader).
+- **No fallback login:** the cache's user group holds only the IAM user, so there is no default or password user to connect as.
 
 ## Usage
 
