@@ -19,3 +19,14 @@ resource "aws_vpc_security_group_ingress_rule" "this" {
   description                  = "Valkey primary and reader endpoints"
   tags                         = merge(local.tags, var.tags)
 }
+
+resource "aws_vpc_security_group_ingress_rule" "cidr" {
+  count             = var.enabled ? length(var.cidr_blocks) : 0
+  security_group_id = aws_security_group.this[0].id
+  cidr_ipv4         = var.cidr_blocks[count.index]
+  ip_protocol       = "tcp"
+  from_port         = 6379
+  to_port           = 6380
+  description       = "Valkey primary and reader endpoints"
+  tags              = merge(local.tags, var.tags)
+}

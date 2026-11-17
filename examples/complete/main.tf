@@ -46,6 +46,7 @@ resource "aws_iam_role" "this" {
 module "this" {
   source                    = "../../"
   git                       = local.git
+  description               = "terraform-aws-valkey complete example"
   vpc_id                    = data.aws_vpcs.this.ids[0]
   private_subnet_ids        = data.aws_subnets.this.ids
   source_security_group_ids = [aws_security_group.this.id]
@@ -69,6 +70,11 @@ output "cache_name" {
 output "user_name" {
   description = "IAM-authenticated Valkey user name"
   value       = module.this.user_name
+}
+
+output "user_group_id" {
+  description = "Valkey user group attached to the cache"
+  value       = module.this.user_group_id
 }
 
 output "iam_policy_arn" {

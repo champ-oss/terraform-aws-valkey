@@ -2,11 +2,13 @@ resource "aws_elasticache_serverless_cache" "this" {
   count                    = var.enabled ? 1 : 0
   engine                   = "valkey"
   name                     = local.name
+  description              = var.description
   major_engine_version     = var.major_engine_version
   kms_key_id               = var.kms_key_id
   snapshot_retention_limit = var.snapshot_retention_limit
   daily_snapshot_time      = var.snapshot_retention_limit > 0 ? var.daily_snapshot_time : null
-  security_group_ids       = [aws_security_group.this[0].id]
+  snapshot_arns_to_restore = var.snapshot_arns_to_restore
+  security_group_ids       = concat([aws_security_group.this[0].id], var.security_group_ids)
   subnet_ids               = var.private_subnet_ids
   user_group_id            = aws_elasticache_user_group.this[0].user_group_id
   tags                     = merge(local.tags, var.tags)
@@ -30,6 +32,13 @@ resource "aws_elasticache_serverless_cache" "this" {
       }
     }
   }
+
+  lifecycle {
+    precondition {
+      condition     = can(regex(local.id_pattern, local.name)) && !strcontains(local.name, "--") && !endswith(local.name, "-")
+      error_message = "Cache name \"${local.name}\" must be 1-40 lowercase letters, digits and hyphens, start with a letter, and have no consecutive or trailing hyphens. Set name, or change git."
+    }
+  }
 }
 
 # IAM authentication: clients sign a short-lived token with their role instead of
@@ -44,6 +53,13 @@ resource "aws_elasticache_user" "this" {
 
   authentication_mode {
     type = "iam"
+  }
+
+  lifecycle {
+    precondition {
+      condition     = can(regex(local.id_pattern, local.user_id)) && !strcontains(local.user_id, "--") && !endswith(local.user_id, "-")
+      error_message = "User ID \"${local.user_id}\" must be 1-40 lowercase letters, digits and hyphens, start with a letter, and have no consecutive or trailing hyphens. Set user_id, or change name or git."
+    }
   }
 }
 

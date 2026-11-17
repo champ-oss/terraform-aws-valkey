@@ -58,6 +58,31 @@ output "iam_policy_arn" {
   value       = try(aws_iam_policy.this[0].arn, "")
 }
 
+output "iam_policy_name" {
+  description = "Name of the elasticache:Connect policy"
+  value       = try(aws_iam_policy.this[0].name, "")
+}
+
+output "iam_policy_json" {
+  description = "The elasticache:Connect policy document, for roles that use inline policies instead of attachments"
+  value       = try(aws_iam_policy.this[0].policy, "")
+}
+
+output "user_group_arn" {
+  description = "Valkey user group ARN"
+  value       = try(aws_elasticache_user_group.this[0].arn, "")
+}
+
+output "major_engine_version" {
+  description = "Major Valkey version of the cache"
+  value       = try(aws_elasticache_serverless_cache.this[0].major_engine_version, "")
+}
+
+output "full_engine_version" {
+  description = "Full Valkey version the cache is running"
+  value       = try(aws_elasticache_serverless_cache.this[0].full_engine_version, "")
+}
+
 output "region" {
   description = "Region of the cache. Clients need it to sign IAM auth tokens."
   value       = data.aws_region.this.region
