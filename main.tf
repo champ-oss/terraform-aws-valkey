@@ -12,6 +12,7 @@ locals {
   access_string = join(" ", concat(
     ["on"],
     [for pattern in var.key_patterns : "~${pattern}"],
+    ["&*"], # ElastiCache adds this when no channel permission is given; set it to avoid drift
     var.acl_rules,
   ))
 }

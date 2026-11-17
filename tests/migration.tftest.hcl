@@ -9,12 +9,6 @@ mock_provider "aws" {
     }
   }
 
-  mock_data "aws_iam_policy_document" {
-    defaults = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
   mock_resource "aws_elasticache_serverless_cache" {
     defaults = {
       arn = "arn:aws:elasticache:us-east-2:111122223333:serverlesscache:mock"
@@ -47,7 +41,7 @@ run "dmv_global_clients" {
   }
 
   assert {
-    condition     = aws_elasticache_user.this[0].access_string == "on ~session:* +@all -@dangerous -scan -randomkey"
+    condition     = aws_elasticache_user.this[0].access_string == "on ~session:* &* +@all -@dangerous -scan -randomkey"
     error_message = "access string must match the existing user: ${aws_elasticache_user.this[0].access_string}"
   }
 

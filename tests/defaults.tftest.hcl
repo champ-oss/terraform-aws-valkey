@@ -8,12 +8,6 @@ mock_provider "aws" {
     }
   }
 
-  mock_data "aws_iam_policy_document" {
-    defaults = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
   mock_resource "aws_elasticache_serverless_cache" {
     defaults = {
       arn = "arn:aws:elasticache:us-east-2:111122223333:serverlesscache:mock"
@@ -56,7 +50,7 @@ run "defaults" {
   }
 
   assert {
-    condition     = aws_elasticache_user.this[0].access_string == "on ~session:* +@all -@dangerous"
+    condition     = aws_elasticache_user.this[0].access_string == "on ~session:* &* +@all -@dangerous"
     error_message = "unexpected default access string: ${aws_elasticache_user.this[0].access_string}"
   }
 
@@ -117,7 +111,7 @@ run "limits" {
   }
 
   assert {
-    condition     = aws_elasticache_user.this[0].access_string == "on ~mdg:bff:session:* ~mdg:bff:oauth-state:* -@all +get +set +cluster|nodes"
+    condition     = aws_elasticache_user.this[0].access_string == "on ~mdg:bff:session:* ~mdg:bff:oauth-state:* &* -@all +get +set +cluster|nodes"
     error_message = "unexpected access string: ${aws_elasticache_user.this[0].access_string}"
   }
 

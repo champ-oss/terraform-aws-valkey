@@ -31,7 +31,7 @@ The client needs `endpoint`, `port`, `user_name`, `cache_name` and `region` to c
 
 ## Access string
 
-The user's access string is built as `on ~<key_patterns...> <acl_rules...>`. The defaults give `on ~<pattern> +@all -@dangerous`. For a stricter user, start `acl_rules` with `-@all` and list the commands the client needs. Cluster-mode clients usually need `hello`, `info`, `cluster|nodes` and `client|setinfo` as well as the data commands.
+The user's access string is built as `on ~<key_patterns...> &* <acl_rules...>`. The defaults give `on ~<pattern> &* +@all -@dangerous`. `&*` (all pub/sub channels) is what ElastiCache adds when no channel permission is given, so it is set explicitly to avoid drift. For a stricter user, start `acl_rules` with `-@all` and list the commands the client needs. Cluster-mode clients usually need `hello`, `info`, `cluster|nodes` and `client|setinfo` as well as the data commands.
 
 ## Testing
 
